@@ -5,9 +5,9 @@ class User(Base):
     __tablename__ = "Users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    name = Column(String(225), index=True)
     Age = Column(Integer)
-    email = Column(String)
+    email = Column(String(225))
     Number=Column(Integer)
 
 

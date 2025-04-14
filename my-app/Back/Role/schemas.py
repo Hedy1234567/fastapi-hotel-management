@@ -7,8 +7,11 @@ class RoleBase(BaseModel):
 class RoleCreate(RoleBase):
     pass
 
-class RoleRespnse(RoleBase):
+class RoleResponse(RoleBase):
     id: int
 
     class Config:
         from_attributes = True 
+
+
+
