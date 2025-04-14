@@ -1,0 +1,59 @@
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi import APIRouter 
+
+from sqlalchemy.orm import Session
+
+
+
+from .schemas import HotelResponse,HotelCreate 
+from .models import Hotel
+from core.database import get_db
+# Création du routeur pour les hôtels
+hotelRouter = APIRouter()
+
+# 🔹 1. Ajouter un hôtel
+@hotelRouter.post("/hotels/", response_model=HotelResponse)
+def create_hotel(hotel: HotelCreate, db: Session = Depends(get_db)):
+    db_hotel = Hotel(**hotel.dict())
+    db.add(db_hotel)
+    db.commit()
+    db.refresh(db_hotel)
+    return db_hotel
+
+# 🔹 2. Récupérer tous les hôtels
+hotelRouter.get("/hotels/", response_model=list[HotelResponse])
+def get_hotels(db: Session = Depends(get_db)):
+    return db.query(Hotel).all()
+
+# 🔹 3. Récupérer un hôtel par ID
+hotelRouter.get("/hotels/{hotel_id}", response_model=HotelResponse)
+def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if hotel is None:
+        raise HTTPException(status_code=404, detail="Hôtel non trouvé")
+    return hotel
+
+# 🔹 4. Mettre à jour un hôtel
+hotelRouter.put("/hotels/{hotel_id}", response_model=HotelResponse)
+def update_hotel(hotel_id: int, hotel_data: HotelCreate, db: Session = Depends(get_db)):
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if hotel is None:
+        raise HTTPException(status_code=404, detail="Hôtel non trouvé")
+    
+    for key, value in hotel_data.dict().items():
+        setattr(hotel, key, value)
+
+    db.commit()
+    db.refresh(hotel)
+    return hotel
+
+# 🔹 5. Supprimer un hôtel
+hotelRouter.delete("/hotels/{hotel_id}")
+def delete_hotel(hotel_id: int, db: Session = Depends(get_db)):
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if hotel is None:
+        raise HTTPException(status_code=404, detail="Hôtel non trouvé")
+    
+    db.delete(hotel)
+    db.commit()
+    return {"message": "Hôtel supprimé avec succès"}
