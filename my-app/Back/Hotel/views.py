@@ -5,28 +5,34 @@ from sqlalchemy.orm import Session
 
 
 
-from .schemas import HotelResponse,HotelCreate 
-from .models import Hotel
+
+from .schemas import HotelBase, HotelResponse,HotelCreate 
+from .models import Adresse, Hotel
 from core.database import get_db
 # Création du routeur pour les hôtels
 hotelRouter = APIRouter()
 
 # 🔹 1. Ajouter un hôtel
-@hotelRouter.post("/hotels/", response_model=HotelResponse)
+@hotelRouter.post("/hotels/")
 def create_hotel(hotel: HotelCreate, db: Session = Depends(get_db)):
-    db_hotel = Hotel(**hotel.dict())
-    db.add(db_hotel)
-    db.commit()
-    db.refresh(db_hotel)
-    return db_hotel
+    id_adresse = Adresse.createAdresse(db, hotel.adresse)
+    # Convertir en dict, retirer l'adresse, puis retransformer en HotelCreate
+    hotel_data = hotel.dict()
+    hotel_data.pop("adresse")
+
+    hotel_base = HotelBase(**hotel_data)  # HotelBase doit correspondre à ce que attend createHotel
+    hotel_id = Hotel.createHotel(db, hotel_base, id_adresse)
+
+    return {"message": "Hotel Created succeffully", "id" : hotel_id}
+
 
 # 🔹 2. Récupérer tous les hôtels
-hotelRouter.get("/hotels/", response_model=list[HotelResponse])
+@hotelRouter.get("/hotels/", response_model=list[HotelResponse])
 def get_hotels(db: Session = Depends(get_db)):
     return db.query(Hotel).all()
 
 # 🔹 3. Récupérer un hôtel par ID
-hotelRouter.get("/hotels/{hotel_id}", response_model=HotelResponse)
+@hotelRouter.get("/hotels/{hotel_id}", response_model=HotelResponse)
 def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
     if hotel is None:
@@ -34,7 +40,7 @@ def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
     return hotel
 
 # 🔹 4. Mettre à jour un hôtel
-hotelRouter.put("/hotels/{hotel_id}", response_model=HotelResponse)
+@hotelRouter.put("/hotels/{hotel_id}", response_model=HotelResponse)
 def update_hotel(hotel_id: int, hotel_data: HotelCreate, db: Session = Depends(get_db)):
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
     if hotel is None:
@@ -48,7 +54,7 @@ def update_hotel(hotel_id: int, hotel_data: HotelCreate, db: Session = Depends(g
     return hotel
 
 # 🔹 5. Supprimer un hôtel
-hotelRouter.delete("/hotels/{hotel_id}")
+@hotelRouter.delete("/hotels/{hotel_id}")
 def delete_hotel(hotel_id: int, db: Session = Depends(get_db)):
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
     if hotel is None:

@@ -1,12 +1,25 @@
 from pydantic import BaseModel
 
+
+class AdresseBase(BaseModel):
+    streetName: str
+    streetNumber: int
+    postalCode : int 
+    city : str
+    country: str
+ 
 class HotelBase(BaseModel):
     name: str
-    city: str
     rating: int
+    suitesNumber : int
+    doubleRoomNumber : int
+    simpleRoomNumber : int
+    Description : str
+
+
 
 class HotelCreate(HotelBase):
-    pass
+    adresse : AdresseBase
 
 class HotelResponse(HotelBase):
     id: int
