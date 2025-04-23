@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi import APIRouter 
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
 
 
@@ -29,12 +30,16 @@ def create_hotel(hotel: HotelCreate, db: Session = Depends(get_db)):
 # 🔹 2. Récupérer tous les hôtels
 @hotelRouter.get("/hotels/", response_model=list[HotelResponse])
 def get_hotels(db: Session = Depends(get_db)):
-    return db.query(Hotel).all()
+    #jointure avec la table adresse pour extraire les info d'adresse 
+    return db.query(Hotel).options(joinedload(Hotel.adresse)).all()
+
+
 
 # 🔹 3. Récupérer un hôtel par ID
 @hotelRouter.get("/hotels/{hotel_id}", response_model=HotelResponse)
 def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
-    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    #jointure avec table adreese 
+    hotel = db.query(Hotel).options(joinedload(Hotel.adresse)).filter(Hotel.id == hotel_id).first()
     if hotel is None:
         raise HTTPException(status_code=404, detail="Hôtel non trouvé")
     return hotel
