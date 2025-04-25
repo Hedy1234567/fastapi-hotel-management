@@ -1,13 +1,16 @@
 from pydantic import BaseModel
 
-class ClientCreate(BaseModel):
+class ClientBase(BaseModel):
     name: str
-    number: int
     adresse: str
+    number: int
     email: str
 
-    class Config:
-        from_attributes = True  # ✅ remplace orm_mode (FastAPI 0.110+ avec Pydantic v2)
+class ClientCreate(ClientBase):
+    pass
 
-class ClientResponse(ClientCreate):
+class ClientResponse(ClientBase):
     id: int
+
+    class Config:
+        from_attributes = True

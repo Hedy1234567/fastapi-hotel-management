@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from .schemas import ClientResponse, ClientCreate
 from .models import Client
@@ -6,34 +6,31 @@ from core.database import get_db
 
 clientRouter = APIRouter()
 
-# 🔹 1. Créer un client
-@clientRouter.post("/clients/", response_model=ClientResponse)
+@clientRouter.post("/clients/")
 def create_client(client: ClientCreate, db: Session = Depends(get_db)):
     db_client = Client(**client.dict())
     db.add(db_client)
+    db.flush()  # pousse à la DB sans commit
     db.commit()
-    db.refresh(db_client)
+
     return db_client
 
-# 🔹 2. Récupérer tous les clients
 @clientRouter.get("/clients/", response_model=list[ClientResponse])
 def get_clients(db: Session = Depends(get_db)):
     return db.query(Client).all()
 
-# 🔹 3. Récupérer un client par ID
 @clientRouter.get("/clients/{client_id}", response_model=ClientResponse)
 def get_client(client_id: int, db: Session = Depends(get_db)):
     client = db.query(Client).filter(Client.id == client_id).first()
-    if client is None:
-        raise HTTPException(status_code=404, detail="Client non trouvé")
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
     return client
 
-# 🔹 4. Mettre à jour un client
 @clientRouter.put("/clients/{client_id}", response_model=ClientResponse)
 def update_client(client_id: int, client_data: ClientCreate, db: Session = Depends(get_db)):
     client = db.query(Client).filter(Client.id == client_id).first()
-    if client is None:
-        raise HTTPException(status_code=404, detail="Client non trouvé")
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
     
     for key, value in client_data.dict().items():
         setattr(client, key, value)
@@ -42,13 +39,12 @@ def update_client(client_id: int, client_data: ClientCreate, db: Session = Depen
     db.refresh(client)
     return client
 
-# 🔹 5. Supprimer un client
 @clientRouter.delete("/clients/{client_id}")
 def delete_client(client_id: int, db: Session = Depends(get_db)):
     client = db.query(Client).filter(Client.id == client_id).first()
-    if client is None:
-        raise HTTPException(status_code=404, detail="Client non trouvé")
-    
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
     db.delete(client)
     db.commit()
-    return {"message": "Client supprimé avec succès"}
+    return {"message": "Client deleted successfully"}
