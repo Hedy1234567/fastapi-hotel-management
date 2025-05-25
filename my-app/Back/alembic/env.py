@@ -14,6 +14,8 @@ from Role import models
 from User import models
 from Client import models
 from Roleacl import models
+from Task import models
+from Reservation import models
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # add your model's MetaData object here

@@ -4,7 +4,7 @@ class RoleAclBase(BaseModel):
     id:int
     id_role: int
     id_task: int
-    permission : str
+    permission : bool
 
 class RoleAclCreate(RoleAclBase):
     pass

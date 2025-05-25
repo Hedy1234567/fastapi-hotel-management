@@ -41,6 +41,7 @@ class Adresse(Base):
     country = Column(String(225))
 
     hotels = relationship("Hotel", back_populates="adresse")
+    user = relationship("User", back_populates="adresse")
 
     @staticmethod
     def createAdresse(db: Session, adresse: AdresseBase):

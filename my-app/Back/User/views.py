@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, APIRouter
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from .schemas import UserResponse, UserCreate
-from .models import User
+from .models import User 
 from core.database import get_db
 
 # Routeur
@@ -15,19 +15,23 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.flush()
     db.commit()
     return db_user
- 
 
-# 🔹 2. Récupérer tous les Users
+# 🔹 2. Récupérer tous les Users avec jointure sur l'adresse
 @UserRouter.get("/Users/", response_model=list[UserResponse])
 def get_users(db: Session = Depends(get_db)):
-    return db.query(User).all()
+    # Joindre l'adresse pour chaque utilisateur
+    users = db.query(User).options(joinedload(User.adresse)).all()
+    return users
 
-# 🔹 3. Récupérer un user par ID
+# 🔹 3. Récupérer un user par ID avec jointure sur l'adresse
 @UserRouter.get("/Users/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
+    # Joindre l'adresse pour l'utilisateur spécifique
+    user = db.query(User).filter(User.id == user_id).options(joinedload(User.adresse)).first()
+    
     if user is None:
         raise HTTPException(status_code=404, detail="User non trouvé")
+    
     return user
 
 # 🔹 4. Mettre à jour un user

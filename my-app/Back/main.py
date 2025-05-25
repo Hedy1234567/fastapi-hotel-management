@@ -2,10 +2,12 @@ from fastapi import FastAPI
 import uvicorn
 from core.database import engine, Base
 from Hotel.views import hotelRouter
-from User.views import UserRouter
+from User.views import UserRouter 
 from Role.views import roleRouter
 from Client.views import clientRouter
 from Roleacl.views import roleaclRouter
+from Task.views import taskRouter
+from Reservation.views import reservationRouter
 
 # Initialisation de l'application FastAPI
 app = FastAPI(
@@ -23,6 +25,8 @@ app.include_router(UserRouter, prefix="/users", tags=["Utilisateurs"])
 app.include_router(roleRouter, prefix="/role", tags=["roles"])
 app.include_router(clientRouter, prefix="/client", tags=["clients"])
 app.include_router(roleaclRouter, prefix="/roleacl", tags=["rolesacl"])
+app.include_router(taskRouter, prefix="/task", tags=["tasks"])
+app.include_router(reservationRouter, prefix="/reservation", tags=["reservations"])
 
 # Route de test
 @app.get("/")
