@@ -2,39 +2,53 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi import APIRouter 
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
 
 
-from .schemas import HotelResponse,HotelCreate 
-from .models import Hotel
+
+from .schemas import HotelBase, HotelResponse,HotelCreate 
+from .models import Adresse, Hotel
 from core.database import get_db
 # Création du routeur pour les hôtels
 hotelRouter = APIRouter()
 
 # 🔹 1. Ajouter un hôtel
-@hotelRouter.post("/hotels/", response_model=HotelResponse)
+@hotelRouter.post("/hotels/")
 def create_hotel(hotel: HotelCreate, db: Session = Depends(get_db)):
-    db_hotel = Hotel(**hotel.dict())
-    db.add(db_hotel)
-    db.commit()
-    db.refresh(db_hotel)
-    return db_hotel
+    # Create the address and get its ID
+    id_adresse = Adresse.createAdresse(db, hotel.adresse)
 
+    # Convert HotelCreate to dict and remove 'adresse' before creating HotelBase
+    hotel_data = hotel.dict()
+    hotel_data.pop("adresse")
+
+    # Create a HotelBase instance with the cleaned data
+    hotel_base = HotelBase(**hotel_data)
+
+    # Create the hotel with the address ID
+    hotel_id = Hotel.createHotel(db, hotel_base, id_adresse)
+
+    return {"message": "Hotel created successfully", "id": hotel_id}
 # 🔹 2. Récupérer tous les hôtels
-hotelRouter.get("/hotels/", response_model=list[HotelResponse])
+@hotelRouter.get("/hotels/", response_model=list[HotelResponse])
 def get_hotels(db: Session = Depends(get_db)):
-    return db.query(Hotel).all()
+    #jointure avec la table adresse pour extraire les info d'adresse 
+    return db.query(Hotel).options(joinedload(Hotel.adresse)).all()
+
+
 
 # 🔹 3. Récupérer un hôtel par ID
-hotelRouter.get("/hotels/{hotel_id}", response_model=HotelResponse)
+@hotelRouter.get("/hotels/{hotel_id}", response_model=HotelResponse)
 def get_hotel(hotel_id: int, db: Session = Depends(get_db)):
-    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    #jointure avec table adreese 
+    hotel = db.query(Hotel).options(joinedload(Hotel.adresse)).filter(Hotel.id == hotel_id).first()
     if hotel is None:
         raise HTTPException(status_code=404, detail="Hôtel non trouvé")
     return hotel
 
 # 🔹 4. Mettre à jour un hôtel
-hotelRouter.put("/hotels/{hotel_id}", response_model=HotelResponse)
+@hotelRouter.put("/hotels/{hotel_id}", response_model=HotelResponse)
 def update_hotel(hotel_id: int, hotel_data: HotelCreate, db: Session = Depends(get_db)):
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
     if hotel is None:
@@ -48,7 +62,7 @@ def update_hotel(hotel_id: int, hotel_data: HotelCreate, db: Session = Depends(g
     return hotel
 
 # 🔹 5. Supprimer un hôtel
-hotelRouter.delete("/hotels/{hotel_id}")
+@hotelRouter.delete("/hotels/{hotel_id}")
 def delete_hotel(hotel_id: int, db: Session = Depends(get_db)):
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
     if hotel is None:
