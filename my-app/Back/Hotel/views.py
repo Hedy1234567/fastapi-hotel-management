@@ -16,17 +16,20 @@ hotelRouter = APIRouter()
 # 🔹 1. Ajouter un hôtel
 @hotelRouter.post("/hotels/")
 def create_hotel(hotel: HotelCreate, db: Session = Depends(get_db)):
+    # Create the address and get its ID
     id_adresse = Adresse.createAdresse(db, hotel.adresse)
-    # Convertir en dict, retirer l'adresse, puis retransformer en HotelCreate
+
+    # Convert HotelCreate to dict and remove 'adresse' before creating HotelBase
     hotel_data = hotel.dict()
     hotel_data.pop("adresse")
 
-    hotel_base = HotelBase(**hotel_data)  # HotelBase doit correspondre à ce que attend createHotel
+    # Create a HotelBase instance with the cleaned data
+    hotel_base = HotelBase(**hotel_data)
+
+    # Create the hotel with the address ID
     hotel_id = Hotel.createHotel(db, hotel_base, id_adresse)
 
-    return {"message": "Hotel Created succeffully", "id" : hotel_id}
-
-
+    return {"message": "Hotel created successfully", "id": hotel_id}
 # 🔹 2. Récupérer tous les hôtels
 @hotelRouter.get("/hotels/", response_model=list[HotelResponse])
 def get_hotels(db: Session = Depends(get_db)):

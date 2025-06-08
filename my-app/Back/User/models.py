@@ -3,7 +3,7 @@ from core.database import Base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from core.database import Base
-from .schemas import UserBase, AdresseBase  # Assure-toi que ces schemas existent
+from .schemas import UserBase # Assure-toi que ces schemas existent
 class User(Base):
     __tablename__ = "users"
 
